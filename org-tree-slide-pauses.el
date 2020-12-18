@@ -54,6 +54,7 @@
 (require 'org-tree-slide)
 (require 'cl-lib)
 (require 'cl-extra)
+(require 'dash)
 
 ;;;;##########################################################################
 ;;;;  User Options, Variables
@@ -309,6 +310,16 @@ Restore the buffer if the variable `org-tree-slide-mode' is off."
   (unless org-tree-slide-mode
     (org-tree-slide-pauses-end)) ) ;; defun
 
+(defun org-tree-slide-pause-goto-end-pause ()
+  "Show all and go directly to the last pause. Next should then jump to the next slide"
+  (interactive)
+  (when-let* ((lists org-tree-slide-pauses-overlay-lists)
+              (lists-len (length lists))
+              (steps (- lists-len org-tree-slide-pauses-current-pause)))
+    (when (< 0 steps)
+      (--dotimes steps
+        (sit-for 0.05)
+        (org-tree-slide-pauses-next-pause)))))
 
 (defun org-tree-slide-pauses-next-pause ()
   "Show next pause.
@@ -355,5 +366,7 @@ OTS-MOVE-NEXT-TREE, the original function with ARGS arguments)."
 
 (add-hook 'org-tree-slide-after-narrow-before-animation-hook #'org-tree-slide-pauses-init)
 (add-hook 'org-tree-slide-mode-hook #'org-tree-slide-pauses-end-hook)
+
+(bind-key "C-M->" 'org-tree-slide-pause-goto-end-pause org-tree-slide-mode-map)
 
 ;;; org-tree-slide-pauses.el ends here
