@@ -353,7 +353,7 @@ OTS-MOVE-NEXT-TREE, the original function with ARGS arguments)."
 (advice-add #'org-tree-slide-move-next-tree
 	    :around #'org-tree-slide-pauses-next-advice)
 
-(add-hook 'org-tree-slide-after-narrow-hook #'org-tree-slide-pauses-init)
+(add-hook 'org-tree-slide-after-narrow-before-animation-hook #'org-tree-slide-pauses-init)
 (add-hook 'org-tree-slide-mode-hook #'org-tree-slide-pauses-end-hook)
 
 ;;; org-tree-slide-pauses.el ends here
