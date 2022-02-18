@@ -67,6 +67,9 @@
 (defvar org-tree-slide-pauses-pause-text-list '()
   "List of overlays to hide the \"pause\" text position." )
 
+(defvar org-tree-slide-pauses--indent-accept-first-level-only t
+  "accept only the top level items when pausing")
+
 (defvar org-tree-slide-pauses-overlay-lists '()
   "List of pauses overlays.
 This list is created with the `org-tree-slide-pauses-search-pauses'.")
@@ -88,31 +91,43 @@ This list is created with the `org-tree-slide-pauses-search-pauses'.")
 
 (defun org-tree-slide-pauses--search-elements ()
   "Search all items that needs pauses and return the org-element list."
+  (let ((indent-accepted 100)) ;; use a large nunmber so min calc will work
+    (delq
+     nil
+     (org-element-map (org-element-parse-buffer nil t)
+         '(comment item keyword headline)
+       (lambda (element)
+         "If it is one of the pauses, return their positions"
+         (cond
 
-  (delq
-   nil
-   (org-element-map (org-element-parse-buffer nil t)
-       '(comment item keyword headline)
-     (lambda (element)
-       "If it is one of the pauses, return their positions"
-       (cond
+	  ((eq (org-element-type element) 'keyword)
+	   (if (or (string-equal (org-element-property :key element) "PAUSE")
+		  (and (string-equal (org-element-property :key element)
+				   "BEAMER")
+		     (string-equal (org-element-property :value element)
+				   "\\pause")))
+	       element
+	     nil))
 
-	((eq (org-element-type element) 'keyword)
-	 (if (or (string-equal (org-element-property :key element) "PAUSE")
-		 (and (string-equal (org-element-property :key element)
-				    "BEAMER")
-		      (string-equal (org-element-property :value element)
-				    "\\pause")))
-	     element
-	   nil))
-	
-	((eq (org-element-type element) 'comment)
-	 (if (string-equal (string-trim (org-element-property :value element))
-			   "pause")
-	     element
-	   nil))
-	
-	(t element))))) ) ;; defun
+	  ((eq (org-element-type element) 'comment)
+	   (if (string-equal (string-trim (org-element-property :value element))
+			     "pause")
+	       element
+	     nil))
+
+          ((eq (org-element-type element) 'item) ;; items preceeded with - + or numbered
+           (save-excursion
+             (let ((prop (org-element-property :begin element)))
+               (goto-char prop)
+               (search-forward-regexp "[^ \\t]" nil t)
+               (let ((indent (- (point) prop)))
+                 ;; (message (format "%i" indent))
+                 (setq indent-accepted (min indent-accepted indent))
+                 (when (or (not org-tree-slide-pauses--indent-accept-first-level-only)
+                          (<= indent indent-accepted))
+                   element)))))
+
+	  (t element))))))) ;; defun
 
 (defun org-tree-slide-pauses--new-overlay-for-text ()
   "Return new overlays for all elements that needs to be hidden."
