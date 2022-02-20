@@ -336,6 +336,20 @@ Restore the buffer if the variable `org-tree-slide-mode' is off."
         (sit-for 0.05)
         (org-tree-slide-pauses-next-pause)))))
 
+
+(defvar org-tree-slide-pauses--distance-color-values '("gray70" "gray60" "gray50"))
+(defun org-tree-slide-pauses--nth-distance-color (n)
+  (or (nth n org-tree-slide-pauses--distance-color-values)
+     "gray40"))
+
+(defun org-tree-slide-pauses--large-text-present ()
+  "is there currently a lot text to see?"
+  (save-excursion
+    (goto-char (point-min))
+    (let ((beg (point)))
+      (org-end-of-subtree)
+      (< 400 (- (point) beg)))))
+
 (defun org-tree-slide-pauses-next-pause ()
   "Show next pause.
 
@@ -346,13 +360,22 @@ Basically, all text are stored as overlays in
 displayed."
   (let ((overlay (nth org-tree-slide-pauses-current-pause
 		      org-tree-slide-pauses-overlay-lists)))
+    (when (org-tree-slide-pauses--large-text-present)
+      (let ((counter 1))
+        (while (>= (- org-tree-slide-pauses-current-pause counter)
+                   0)
+          (let ((previous-overlay (nth (- org-tree-slide-pauses-current-pause counter)
+		                       org-tree-slide-pauses-overlay-lists)))
+            (when previous-overlay
+              (overlay-put previous-overlay 'face `(:foreground ,(org-tree-slide-pauses--nth-distance-color counter)))))
+          (setq counter (1+ counter)))))
     (when overlay
       (overlay-put overlay 'face nil)
       (org-tree-slide-pauses-all-images t
 					(overlay-start overlay)
 					(overlay-end overlay))
       (setq org-tree-slide-pauses-current-pause
-	    (1+ org-tree-slide-pauses-current-pause)))) ) ;; defun
+	    (1+ org-tree-slide-pauses-current-pause)))))
 
 
 (defun org-tree-slide-pauses-next-advice (ots-move-next-tree &rest args)
