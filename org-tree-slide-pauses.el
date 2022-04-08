@@ -55,6 +55,7 @@
 (require 'cl-lib)
 (require 'cl-extra)
 (require 'dash)
+(require 'bind-key)
 
 ;;;;##########################################################################
 ;;;;  User Options, Variables
