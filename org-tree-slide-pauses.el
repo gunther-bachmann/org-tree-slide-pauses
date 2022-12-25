@@ -394,6 +394,12 @@ Restore the buffer if the variable `org-tree-slide-mode' is off."
 (defvar org-tree-slide-pauses-fold-list-age 2
   "fold lists that are ORG-TREE-SLIDE-PAUSES-FOLD-LIST-AGE - 1 behind the current pause")
 
+(defvar org-tree-slide-pauses-before-list-unfold nil
+  "A hook run before list items are unfolded on current slide")
+
+(defvar org-tree-slide-pauses-after-list-unfold nil
+  "A hook run after list items are unfolded on current slide")
+
 (defun org-tree-slide-pauses-next-pause ()
   "Show next pause.
 
@@ -408,7 +414,9 @@ displayed."
     (when (org-tree-slide-pauses--large-text-present)
       (when (>= org-tree-slide-pauses-current-pause org-tree-slide-pauses-fold-list-age)
         (org-tree-slide-pauses--list-fold (- org-tree-slide-pauses-current-pause 2)))
+      (run-hooks 'org-tree-slide-pauses-before-list-unfold)
       (org-tree-slide-pauses--list-unfold org-tree-slide-pauses-current-pause)
+      (run-hooks 'org-tree-slide-pauses-after-list-unfold)
       (let ((counter 1))
         (while (>= (- org-tree-slide-pauses-current-pause counter)
                   0)
@@ -433,8 +441,9 @@ When the user ask for the next slide, instead show the next hidden text.
 If no hidden text is found, then show the next slide (call
 OTS-MOVE-NEXT-TREE, the original function with ARGS arguments)."
   (interactive)
-  (if (>= org-tree-slide-pauses-current-pause
-	 (length org-tree-slide-pauses-overlay-lists))
+  (if (or (>= org-tree-slide-pauses-current-pause
+	    (length org-tree-slide-pauses-overlay-lists))
+         (eq (point) org-tree-slide-content--pos))
       (progn
 	(apply ots-move-next-tree args)
 	;; Parse the current slide, or just in case the user edited the buffer
