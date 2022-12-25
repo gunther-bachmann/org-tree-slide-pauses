@@ -313,7 +313,9 @@ If SHOW is t, then show them."
 This function is added to the `org-tree-slide-after-narrow-hook' to start the
 pauses parsing."
   (org-tree-slide-pauses-search-pauses)
-  (org-tree-slide-pauses-hide-pauses) ) ;; defun
+  (org-tree-slide-pauses-hide-pauses)
+  (when (org-tree-slide-pauses--large-text-present)
+    (org-tree-slide-pauses--list-fold-all))) ;; defun
 
 (defun org-tree-slide-pauses-end ()
   "Restore the buffer and delete overlays."
@@ -351,6 +353,47 @@ Restore the buffer if the variable `org-tree-slide-mode' is off."
       (org-end-of-subtree)
       (< 400 (- (point) beg)))))
 
+(defun org-tree-slide-pauses--list-fold-all ()
+  "fold all list elements under this heading"
+  (let ((eos (point-max)))
+    (save-excursion
+      (org-back-to-heading)
+      (while (org-list-search-forward (org-item-beginning-re) eos t)
+        (beginning-of-line 1)
+        (let* ((struct (org-list-struct))
+	       (prevs (org-list-prevs-alist struct))
+	       (end (org-list-get-bottom-point struct)))
+	  (dolist (e (org-list-get-all-items (point) struct prevs))
+	    (org-list-set-item-visibility e struct 'folded))
+	  (goto-char (if (< end eos) end eos)))))))
+
+(defun org-tree-slide-pauses--list-fold (n)
+  "unfold list element N (zero based)"
+  (org-tree-slide-pauses--list-visibility-set n 'folded))
+
+(defun org-tree-slide-pauses--list-unfold (n)
+  "unfold list element N (zero based)"
+  (org-tree-slide-pauses--list-visibility-set n 'subtree))
+
+(defun org-tree-slide-pauses--list-visibility-set (n vis)
+  "unfold list element N (zero based) of the topmost list under this heading"
+  (let ((eos (point-max)))
+    (save-excursion
+      (org-back-to-heading)
+      (when (org-list-search-forward (org-item-beginning-re) eos t)
+        (beginning-of-line 1)
+        (let* ((struct (org-list-struct))
+	       (prevs (org-list-prevs-alist struct))
+	       (end (org-list-get-bottom-point struct)))
+          (let ((list-count 0))
+	    (dolist (e (org-list-get-all-items (point) struct prevs))
+              (when (eq list-count n)
+	        (org-list-set-item-visibility e struct vis))
+              (setq list-count (1+ list-count)))))))))
+
+(defvar org-tree-slide-pauses-fold-list-age 2
+  "fold lists that are ORG-TREE-SLIDE-PAUSES-FOLD-LIST-AGE - 1 behind the current pause")
+
 (defun org-tree-slide-pauses-next-pause ()
   "Show next pause.
 
@@ -359,12 +402,16 @@ Basically, all text are stored as overlays in
 
 `org-tree-slide-pauses-current-pause' keep track of the number of overlays
 displayed."
+
   (let ((overlay (nth org-tree-slide-pauses-current-pause
 		      org-tree-slide-pauses-overlay-lists)))
     (when (org-tree-slide-pauses--large-text-present)
+      (when (>= org-tree-slide-pauses-current-pause org-tree-slide-pauses-fold-list-age)
+        (org-tree-slide-pauses--list-fold (- org-tree-slide-pauses-current-pause 2)))
+      (org-tree-slide-pauses--list-unfold org-tree-slide-pauses-current-pause)
       (let ((counter 1))
         (while (>= (- org-tree-slide-pauses-current-pause counter)
-                   0)
+                  0)
           (let ((previous-overlay (nth (- org-tree-slide-pauses-current-pause counter)
 		                       org-tree-slide-pauses-overlay-lists)))
             (when previous-overlay
