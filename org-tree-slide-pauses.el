@@ -254,10 +254,10 @@ Returns nil when:
     (overlay-put the-overlay 'invisible t))
   
   (dolist (the-overlay org-tree-slide-pauses-overlay-lists)
-    (overlay-put the-overlay 'face 'shadow)
+    (overlay-put the-overlay 'face `(:foreground ,org-tree-slide-pauses--disabled-color-value))
     (org-tree-slide-pauses-all-images nil
 				      (overlay-start the-overlay)
-				      (overlay-end the-overlay))) ) ;; defun
+				      (overlay-end the-overlay)))) ;; defun
 
 (defun org-tree-slide-pauses-show-pauses ()
   "Show everything to edit the buffer easily.
@@ -341,9 +341,11 @@ Restore the buffer if the variable `org-tree-slide-mode' is off."
 
 
 (defvar org-tree-slide-pauses--distance-color-values '("gray70" "gray60" "gray50"))
+(defvar org-tree-slide-pauses--disabled-color-value "gray40")
+
 (defun org-tree-slide-pauses--nth-distance-color (n)
   (or (nth n org-tree-slide-pauses--distance-color-values)
-     "gray40"))
+     org-tree-slide-pauses--disabled-color-value))
 
 (defun org-tree-slide-pauses--large-text-present ()
   "is there currently a lot text to see?"
