@@ -409,9 +409,13 @@ Basically, all text are stored as overlays in
 `org-tree-slide-pauses-current-pause' keep track of the number of overlays
 displayed."
 
-  (let ((overlay (nth org-tree-slide-pauses-current-pause
-		      org-tree-slide-pauses-overlay-lists)))
-    (when (org-tree-slide-pauses--large-text-present)
+  (let* ((overlay (nth org-tree-slide-pauses-current-pause
+		      org-tree-slide-pauses-overlay-lists))
+        (props (org-element--get-node-properties))
+        (fade-out-local-override (plist-member props ':FADING-ELEMENTS))
+        (fade-out-wanted (eval (car (read-from-string (or (plist-get props ':FADING-ELEMENTS) "nil"))))))
+    (when (or (and (org-tree-slide-pauses--large-text-present) (not fade-out-local-override))
+             (and fade-out-local-override fade-out-wanted))
       (when (>= org-tree-slide-pauses-current-pause org-tree-slide-pauses-fold-list-age)
         (org-tree-slide-pauses--list-fold (- org-tree-slide-pauses-current-pause 2)))
       (run-hooks 'org-tree-slide-pauses-before-list-unfold)
