@@ -458,9 +458,10 @@ OTS-MOVE-NEXT-TREE, the original function with ARGS arguments)."
 	)
     (progn
       (org-tree-slide-pauses-next-pause)
-      (message "Pauses: %d/%d"
-	       org-tree-slide-pauses-current-pause
-	       (length org-tree-slide-pauses-overlay-lists)))) ) ;; defun
+      ;; (message "Pauses: %d/%d"
+      ;;          org-tree-slide-pauses-current-pause
+      ;;          (length org-tree-slide-pauses-overlay-lists))
+      )) ) ;; defun
 
 (advice-add #'org-tree-slide-move-next-tree
 	    :around #'org-tree-slide-pauses-next-advice)
